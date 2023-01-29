@@ -1,22 +1,29 @@
+// dependencies
 const inquirer = require("inquirer");
 const mysql = require("mysql2");
+// console.table for displaying mysql data in a table format
 const cTable = require("console.table");
 const dotenv = require("dotenv");
+
+// dotenv
 dotenv.config();
 
+// mysql connection uses .env file. (see .env.EXAMPLE)
 const db = mysql.createConnection({
-  host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
 });
 
+// connect to mysql
 db.connect((err) => {
   if (err) throw err;
   start();
 });
 
+// start function for inquirer prompts
 const start = () => {
+  // inquirer prompt for user to select what they would like to do
   inquirer
     .prompt({
       name: "start",
@@ -40,6 +47,7 @@ const start = () => {
         "Exit",
       ],
     })
+    // switch statement for user selection to run appropriate function
     .then((answer) => {
       switch (answer.start) {
         case "View all employees":
@@ -91,8 +99,10 @@ const start = () => {
     });
 };
 
+// view all employees function using a join to display all employee data from multiple tables
 const viewAllEmployees = () => {
   console.log("Viewing all employees");
+  // query to join all employee data from multiple tables and display in a table format using console.table
   db.query(
     `
     SELECT e.id, e.first_name, e.last_name, role.title, department.name, m.first_name AS manager_first_name, m.last_name AS manager_last_name
@@ -109,7 +119,10 @@ const viewAllEmployees = () => {
   );
 };
 
+// view all employees by department function using a join to display all employee data from multiple tables
 const viewAllEmployeesByDepartment = () => {
+  console.log("Viewing all employees by department");
+  // query department table to get all departments and display in a list for user to select
   db.query(`SELECT * FROM department`, (err, results) => {
     let departments = results.map((department) => {
       return {
@@ -125,6 +138,7 @@ const viewAllEmployeesByDepartment = () => {
         choices: departments,
       })
       .then((answer) => {
+        // query to join all employee data from multiple tables and display in a table format using console.table
         db.query(
           `
             SELECT e.id, e.first_name, e.last_name, role.title, department.name, m.first_name AS manager_first_name, m.last_name AS manager_last_name
@@ -145,7 +159,11 @@ const viewAllEmployeesByDepartment = () => {
   });
 };
 
+// view all employees by manager function using a join to display all employee data from multiple tables
 const viewAllEmployeesByManager = () => {
+  console.log("Viewing all employees by manager");
+
+  // query employee table to get all managers and display in a list for user to select
   db.query(
     `
     SELECT id, first_name, last_name 
@@ -153,7 +171,6 @@ const viewAllEmployeesByManager = () => {
     WHERE manager_id = 7
     `,
     (err, results) => {
-      console.log(results);
       let managers = results.map((manager) => {
         return {
           name: manager.first_name + " " + manager.last_name,
@@ -168,7 +185,7 @@ const viewAllEmployeesByManager = () => {
           choices: managers,
         })
         .then((answer) => {
-          console.log(answer);
+          // query to join all employee data from multiple tables and display in a table format using console.table
           db.query(
             `
             SELECT e.id, e.first_name, e.last_name, role.title, department.name, m.first_name AS manager_first_name, m.last_name AS manager_last_name
@@ -190,7 +207,10 @@ const viewAllEmployeesByManager = () => {
   );
 };
 
+// add employee function grabbing data from role and employee tables to populate choices for inquirer
 const addEmployee = () => {
+  console.log("Adding employee");
+  // query role table to get all roles and display in a list for user to select
   db.query(`SELECT * FROM role`, (err, roleResults) => {
     let roles = roleResults.map((role) => {
       return {
@@ -198,6 +218,7 @@ const addEmployee = () => {
         value: role.id,
       };
     });
+    // query employee table to get all employees and display in a list for user to select
     db.query(
       `SELECT * FROM employee WHERE manager_id = 7`,
       (err, employeeResults) => {
@@ -253,12 +274,108 @@ const addEmployee = () => {
   });
 };
 
+// remove employee function grabbing data from employee table to populate choices for inquirer
 const removeEmployee = () => {
-    db.query(`SELECT * FROM employee`, (err, employeeResults) => {
-        let employees = employeeResults.map((employee) => {
+  // query employee table to get all employees and display in a list for user to select
+  db.query(`SELECT * FROM employee`, (err, employeeResults) => {
+    let employees = employeeResults.map((employee) => {
+      return {
+        name: `${employee.first_name} ${employee.last_name}`,
+        value: employee.id,
+      };
+    });
+    inquirer
+      .prompt([
+        {
+          name: "employee",
+          type: "list",
+          message: "Which employee do you want to remove?",
+          choices: employees,
+        },
+      ])
+      .then((answers) => {
+        // query to delete employee from employee table
+        db.query(
+          `DELETE FROM employee WHERE id = ?`,
+          [answers.employee],
+          (err) => {
+            if (err) throw err;
+            console.log("Employee removed!");
+            start();
+          }
+        );
+      });
+  });
+};
+
+// update employee role function grabbing data from employee and role tables to populate choices for inquirer
+const updateEmployeeRole = () => {
+  console.log("Updating employee role");
+  // query employee table to get all employees and display in a list for user to select
+  db.query(`SELECT * FROM employee`, (err, employeeResults) => {
+    let employees = employeeResults.map((employee) => {
+      return {
+        name: `${employee.first_name} ${employee.last_name}`,
+        value: employee.id,
+      };
+    });
+    // query role table to get all roles and display in a list for user to select
+    db.query(`SELECT * FROM role`, (err, roleResults) => {
+      let roles = roleResults.map((role) => {
+        return {
+          name: role.title,
+          value: role.id,
+        };
+      });
+      inquirer
+        .prompt([
+          {
+            name: "employee",
+            type: "list",
+            message: "Which employee's role do you want to update?",
+            choices: employees,
+          },
+          {
+            name: "role",
+            type: "list",
+            message: "What is the new role for the employee?",
+            choices: roles,
+          },
+        ])
+        .then((answers) => {
+          db.query(
+            `UPDATE employee SET role_id = ? WHERE id = ?`,
+            [answers.role, answers.employee],
+            (err) => {
+              if (err) throw err;
+              console.log("Employee role updated!");
+              start();
+            }
+          );
+        });
+    });
+  });
+};
+
+// update employee manager function grabbing data from employee table to populate choices for inquirer
+const updateEmployeeManager = () => {
+  console.log("Updating employee manager");
+  // query employee table to get all employees and display in a list for user to select
+  db.query(`SELECT * FROM employee`, (err, employeeResults) => {
+    let employees = employeeResults.map((employee) => {
+      return {
+        name: `${employee.first_name} ${employee.last_name}`,
+        value: employee.id,
+      };
+    });
+    // query employee table to get all employees and display in a list for user to select
+    db.query(
+      `SELECT * FROM employee WHERE manager_id = 7`,
+      (err, managerResults) => {
+        let managers = managerResults.map((manager) => {
           return {
-            name: `${employee.first_name} ${employee.last_name}`,
-            value: employee.id,
+            name: `${manager.first_name} ${manager.last_name}`,
+            value: manager.id,
           };
         });
         inquirer
@@ -266,149 +383,115 @@ const removeEmployee = () => {
             {
               name: "employee",
               type: "list",
-              message: "Which employee do you want to remove?",
+              message: "Which employee would you like to update?",
               choices: employees,
+            },
+            {
+              name: "manager",
+              type: "list",
+              message: "Who is the employee's new manager?",
+              choices: managers,
             },
           ])
           .then((answers) => {
             db.query(
-              `DELETE FROM employee WHERE id = ?`,
-              [answers.employee],
+              `UPDATE employee SET manager_id = ? WHERE id = ?`,
+              [answers.manager, answers.employee],
               (err) => {
                 if (err) throw err;
-                console.log("Employee removed!");
+                console.log("Employee updated!");
                 start();
               }
             );
           });
-    });
-};
-
-const updateEmployeeRole = () => {
-    db.query(`SELECT * FROM employee`, (err, employeeResults) => {
-        let employees = employeeResults.map((employee) => {
-          return {
-            name: `${employee.first_name} ${employee.last_name}`,
-            value: employee.id,
-          };
-        });
-        db.query(`SELECT * FROM role`, (err, roleResults) => {
-            let roles = roleResults.map((role) => {
-              return {
-                name: role.title,
-                value: role.id,
-              };
-            });
-            inquirer
-              .prompt([
-                {
-                  name: "employee",
-                  type: "list",
-                  message: "Which employee's role do you want to update?",
-                  choices: employees,
-                },
-                {
-                  name: "role",
-                  type: "list",
-                  message: "What is the new role for the employee?",
-                  choices: roles,
-                },
-              ])
-              .then((answers) => {
-                db.query(
-                  `UPDATE employee SET role_id = ? WHERE id = ?`,
-                  [answers.role, answers.employee],
-                  (err) => {
-                    if (err) throw err;
-                    console.log("Employee role updated!");
-                    start();
-                  }
-                );
-              });
-        });
-    });
-};
-
-const updateEmployeeManager = () => {
-    db.query(
-        `SELECT * FROM employee`,
-        (err, employeeResults) => {
-            let employees = employeeResults.map((employee) => {
-                return {
-                    name: `${employee.first_name} ${employee.last_name}`,
-                    value: employee.id,
-                };
-            });
-            db.query(
-                `SELECT * FROM employee WHERE manager_id = 7`,
-                (err, managerResults) => {
-                    let managers = managerResults.map((manager) => {
-                        return {
-                            name: `${manager.first_name} ${manager.last_name}`,
-                            value: manager.id,
-                        };
-                    });
-                    inquirer
-                        .prompt([
-                            {
-                                name: "employee",
-                                type: "list",
-                                message: "Which employee would you like to update?",
-                                choices: employees,
-                            },
-                            {
-                                name: "manager",
-                                type: "list",
-                                message: "Who is the employee's new manager?",
-                                choices: managers,
-                            },
-                        ])
-                        .then((answers) => {
-                            db.query(
-                                `UPDATE employee SET manager_id = ? WHERE id = ?`,
-                                [answers.manager, answers.employee],
-                                (err) => {
-                                    if (err) throw err;
-                                    console.log("Employee updated!");
-                                    start();
-                                }
-                            );
-                        });
-                }
-            );
-        }
+      }
     );
+  });
 };
 
+// view all roles function joining role and department tables to display department name instead of id
 const viewAllRoles = () => {
-    db.query(`SELECT role.title, department.name AS department_name
+  // query to join role and department tables
+  db.query(
+    `SELECT role.title, department.name AS department_name
     FROM role
     JOIN department
-    ON role.department_id = department.id`, (err, results) => {
-        if (err) throw err;
-        console.table(results);
-        start();
+    ON role.department_id = department.id`,
+    (err, results) => {
+      if (err) throw err;
+      console.table(results);
+      start();
+    }
+  );
+};
+
+// add role function grabbing data from department table to populate choices for inquirer
+const addRole = () => {
+  inquirer
+    .prompt([
+      {
+        name: "title",
+        type: "input",
+        message: "What is the title of the role you want to add?",
+      },
+      {
+        name: "salary",
+        type: "input",
+        message: "What is the salary for the role you want to add?",
+      },
+      {
+        name: "department_id",
+        type: "input",
+        message: "What is the department id for the role you want to add?",
+      },
+    ])
+    .then((answers) => {
+      // query to insert role into role table with user input from inquirer
+      db.query(
+        `INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)`,
+        [answers.title, answers.salary, answers.department_id],
+        (err) => {
+          if (err) throw err;
+          console.log("Role added!");
+          start();
+        }
+      );
     });
 };
 
-
-const addRole = () => {
-  db.query("SELECT * FROM role", (err, results) => {
-    if (err) throw err;
-    console.table(results);
-    start();
-  });
-};
-
+// remove role function grabbing data from role table to populate choices for inquirer
 const removeRole = () => {
-  db.query("SELECT * FROM role", (err, results) => {
-    if (err) throw err;
-    console.table(results);
-    start();
+  // query role table to get all roles and display in a list for user to select
+  db.query("SELECT * FROM role", (err, roleResults) => {
+    let roles = roleResults.map((role) => {
+      return {
+        name: role.title,
+        value: role.id,
+      };
+    });
+    inquirer
+      .prompt([
+        {
+          name: "role",
+          type: "list",
+          message: "Which role do you want to remove?",
+          choices: roles,
+        },
+      ])
+      .then((answers) => {
+        // query to delete role from role table with user input from inquirer
+        db.query(`DELETE FROM role WHERE id = ?`, [answers.role], (err) => {
+          if (err) throw err;
+          console.log("Role removed!");
+          start();
+        });
+      });
   });
 };
 
+// view all departments function grabbing data from department table
 const viewAllDepartments = () => {
+  // query department table to get all departments
   db.query("SELECT * FROM department", (err, results) => {
     if (err) throw err;
     console.table(results);
@@ -416,26 +499,72 @@ const viewAllDepartments = () => {
   });
 };
 
+// add department function grabbing data from department table to populate choices for inquirer
 const addDepartment = () => {
-  db.query("SELECT * FROM department", (err, results) => {
-    if (err) throw err;
-    console.table(results);
-    start();
-  });
+  inquirer
+    .prompt({
+      name: "departmentName",
+      type: "input",
+      message: "Enter the name of the department:",
+    })
+    .then((answer) => {
+      const departmentName = answer.departmentName;
+      // query to insert department into department table with user input from inquirer
+      db.query(
+        `INSERT INTO department (name) VALUES (?)`,
+        departmentName,
+        (err, results) => {
+          if (err) throw err;
+          console.log(`Department ${departmentName} added successfully!`);
+          start();
+        }
+      );
+    });
 };
 
+// remove department function grabbing data from department table to populate choices for inquirer
 const removeDepartment = () => {
-  db.query("SELECT * FROM department", (err, results) => {
-    if (err) throw err;
-    console.table(results);
-    start();
+  // query department table to get all departments and display in a list for user to select
+  db.query("SELECT * FROM department", (err, departmentResults) => {
+    let departments = departmentResults.map((department) => {
+      return {
+        name: department.name,
+        value: department.id,
+      };
+    });
+    inquirer
+      .prompt([
+        {
+          name: "department",
+          type: "list",
+          message: "Which department do you want to remove?",
+          choices: departments,
+        },
+      ])
+      .then((answers) => {
+        // query to delete department from department table with user input from inquirer
+        db.query(
+          `DELETE FROM department WHERE id = ?`,
+          [answers.department],
+          (err) => {
+            if (err) throw err;
+            console.log("Department removed!");
+            start();
+          }
+        );
+      });
   });
 };
 
+// view total utilized budget function joining employee, role, and department tables to display department name instead of id and sum of salaries for each department
 const viewTotalUtilizedBudget = () => {
-  db.query("SELECT * FROM department", (err, results) => {
-    if (err) throw err;
-    console.table(results);
-    start();
-  });
+  // query to join employee, role, and department tables and sum salaries for each department
+  db.query(
+    "SELECT department.name, SUM(role.salary) AS total_budget FROM employee INNER JOIN role ON employee.role_id = role.id INNER JOIN department ON role.department_id = department.id GROUP BY department.name;",
+    (err, results) => {
+      if (err) throw err;
+      console.table(results);
+      start();
+    }
+  );
 };
