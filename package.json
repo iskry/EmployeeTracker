@@ -1,7 +1,25 @@
 {
   "dependencies": {
     "console.table": "^0.10.0",
-    "inquirer": "^9.1.4",
+    "dotenv": "^16.0.3",
+    "inquirer": "^8.2.5",
     "mysql2": "^3.0.1"
-  }
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "name": "employeetracker",
+  "description": "",
+  "version": "1.0.0",
+  "main": "server.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iskry/EmployeeTracker.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/iskry/EmployeeTracker/issues"
+  },
+  "homepage": "https://github.com/iskry/EmployeeTracker#readme"
 }
