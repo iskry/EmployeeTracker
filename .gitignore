@@ -1,3 +1,4 @@
 node_modules
 sqltools_20230129104037_5608.log 
 package-lock.json
+.env
