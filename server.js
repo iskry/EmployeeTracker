@@ -5,7 +5,7 @@ const mysql = require("mysql2");
 const cTable = require("console.table");
 const dotenv = require("dotenv");
 
-// dotenv
+// dotenv config to use .env file
 dotenv.config();
 
 // mysql connection uses .env file. (see .env.EXAMPLE)
@@ -277,7 +277,6 @@ const addEmployee = () => {
 
 // remove employee function grabbing data from employee table to populate choices for inquirer
 const removeEmployee = () => {
-  // query employee table to get all employees and display in a list for user to select
   db.query(`SELECT * FROM employee`, (err, employeeResults) => {
     let employees = employeeResults.map((employee) => {
       return {
@@ -312,7 +311,6 @@ const removeEmployee = () => {
 // update employee role function grabbing data from employee and role tables to populate choices for inquirer
 const updateEmployeeRole = () => {
   console.log("Updating employee role");
-  // query employee table to get all employees and display in a list for user to select
   db.query(`SELECT * FROM employee`, (err, employeeResults) => {
     let employees = employeeResults.map((employee) => {
       return {
@@ -320,7 +318,6 @@ const updateEmployeeRole = () => {
         value: employee.id,
       };
     });
-    // query role table to get all roles and display in a list for user to select
     db.query(`SELECT * FROM role`, (err, roleResults) => {
       let roles = roleResults.map((role) => {
         return {
@@ -361,7 +358,6 @@ const updateEmployeeRole = () => {
 // update employee manager function grabbing data from employee table to populate choices for inquirer
 const updateEmployeeManager = () => {
   console.log("Updating employee manager");
-  // query employee table to get all employees and display in a list for user to select
   db.query(`SELECT * FROM employee`, (err, employeeResults) => {
     let employees = employeeResults.map((employee) => {
       return {
@@ -369,7 +365,7 @@ const updateEmployeeManager = () => {
         value: employee.id,
       };
     });
-    // query employee table to get all employees and display in a list for user to select
+    
     db.query(
       `SELECT * FROM employee WHERE manager_id = 7`,
       (err, managerResults) => {
@@ -460,7 +456,7 @@ const addRole = () => {
     });
 };
 
-// remove role function grabbing data from role table to populate choices for inquirer
+
 const removeRole = () => {
   // query role table to get all roles and display in a list for user to select
   db.query("SELECT * FROM role", (err, roleResults) => {
@@ -490,7 +486,7 @@ const removeRole = () => {
   });
 };
 
-// view all departments function grabbing data from department table
+
 const viewAllDepartments = () => {
   // query department table to get all departments
   db.query("SELECT * FROM department", (err, results) => {
@@ -523,7 +519,7 @@ const addDepartment = () => {
     });
 };
 
-// remove department function grabbing data from department table to populate choices for inquirer
+
 const removeDepartment = () => {
   // query department table to get all departments and display in a list for user to select
   db.query("SELECT * FROM department", (err, departmentResults) => {
@@ -557,7 +553,7 @@ const removeDepartment = () => {
   });
 };
 
-// view total utilized budget function joining employee, role, and department tables to display department name instead of id
+
 const viewTotalUtilizedBudget = () => {
 // view total utilized budget function joining employee, role, and department tables to display department name instead of id and sum of salaries for each department
   db.query(
