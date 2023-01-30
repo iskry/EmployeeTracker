@@ -119,7 +119,7 @@ const viewAllEmployees = () => {
   );
 };
 
-// view all employees by department function using a join to display all employee data from multiple tables
+// view all employees by department 
 const viewAllEmployeesByDepartment = () => {
   console.log("Viewing all employees by department");
   // query department table to get all departments and display in a list for user to select
@@ -138,7 +138,7 @@ const viewAllEmployeesByDepartment = () => {
         choices: departments,
       })
       .then((answer) => {
-        // query to join all employee data from multiple tables and display in a table format using console.table
+        // query to join all employee data from multiple tables and display in a table format using console.table. the query is filtered by the department selected by the user
         db.query(
           `
             SELECT e.id, e.first_name, e.last_name, role.title, department.name, m.first_name AS manager_first_name, m.last_name AS manager_last_name
@@ -163,7 +163,7 @@ const viewAllEmployeesByDepartment = () => {
 const viewAllEmployeesByManager = () => {
   console.log("Viewing all employees by manager");
 
-  // query employee table to get all managers and display in a list for user to select
+  // query employee table to get all managers and display in a list for user to select. all managers have a manager_id of 7 in the database. 7 represents the current president
   db.query(
     `
     SELECT id, first_name, last_name 
@@ -185,7 +185,7 @@ const viewAllEmployeesByManager = () => {
           choices: managers,
         })
         .then((answer) => {
-          // query to join all employee data from multiple tables and display in a table format using console.table
+          // query to join all employee data from multiple tables and display in a table format using console.table. the query is filtered by the manager selected by the user
           db.query(
             `
             SELECT e.id, e.first_name, e.last_name, role.title, department.name, m.first_name AS manager_first_name, m.last_name AS manager_last_name
@@ -210,7 +210,7 @@ const viewAllEmployeesByManager = () => {
 // add employee function grabbing data from role and employee tables to populate choices for inquirer
 const addEmployee = () => {
   console.log("Adding employee");
-  // query role table to get all roles and display in a list for user to select
+  // query role table to get all roles and display in a list for user to select. the role id is used to assign the role to the employee
   db.query(`SELECT * FROM role`, (err, roleResults) => {
     let roles = roleResults.map((role) => {
       return {
@@ -218,7 +218,7 @@ const addEmployee = () => {
         value: role.id,
       };
     });
-    // query employee table to get all employees and display in a list for user to select
+    // query all employees where the manager id is 7. this is the current president. the employee id is used to assign the manager to the employee
     db.query(
       `SELECT * FROM employee WHERE manager_id = 7`,
       (err, employeeResults) => {
@@ -254,6 +254,7 @@ const addEmployee = () => {
             },
           ])
           .then((answers) => {
+            // query to insert new employee into employee table
             db.query(
               `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)`,
               [
@@ -556,9 +557,9 @@ const removeDepartment = () => {
   });
 };
 
-// view total utilized budget function joining employee, role, and department tables to display department name instead of id and sum of salaries for each department
+// view total utilized budget function joining employee, role, and department tables to display department name instead of id
 const viewTotalUtilizedBudget = () => {
-  // query to join employee, role, and department tables and sum salaries for each department
+// view total utilized budget function joining employee, role, and department tables to display department name instead of id and sum of salaries for each department
   db.query(
     "SELECT department.name, SUM(role.salary) AS total_budget FROM employee INNER JOIN role ON employee.role_id = role.id INNER JOIN department ON role.department_id = department.id GROUP BY department.name;",
     (err, results) => {
